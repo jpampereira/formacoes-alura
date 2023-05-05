@@ -1,0 +1,3 @@
+Verônica é professora em uma escola e decidiu disponibilizar semanalmente arquivos PDF para seus alunos e alunas acompanharem os conteúdos passados ao longo da semana. Durante as primeiras semanas ela fez esse processo manualmente e sentiu que gastava muito tempo. Sabendo que você é estudante de programação, Verônica pediu a sua ajuda com essa tarefa.
+
+Como você desenvolveria um script para automatizar a compactação dos arquivos PDF?
