@@ -1,0 +1,3 @@
+Maria Luísa é fotógrafa e, após finalizar um ensaio fotográfico, ela precisa copiar as fotos da sua câmera para o computador. Entretanto, essa atividade se tornou repetitiva e cansativa: ela precisa copiar todos os arquivos .png do diretório G:\camera\photos para o diretório D:\fotos-backup
+
+Maria Luísa sabe que você estuda programação e pediu a sua ajuda. Como você desenvolveria um script para realizar o backup das fotos da câmera para o computador dela?
