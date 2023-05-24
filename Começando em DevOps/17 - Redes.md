@@ -120,3 +120,43 @@
   - Por isso, ao digitarmos `localhost`, logo nossa máquina entende que desejamos nos conectar com a interface de LOOPBACK da nossa máquina:
 
     ![Ping em localhost](Imagens/Linux%20Terminal%20-%20Comando%20ping%20em%20localhost.png)
+
+## :four: Diagnóstico de Rede
+
+### :arrow_right: PING
+
+- É uma prática muito comum utilizarmos o comando `ping` quando desejamos verificar se um determinado destino está operacional. Porém, essa é uma prática equivocada, uma vez que se os pacotes enviados não estão sendo retornados, isso não significa necessariamente que o destino em questão está fora de serviço.
+
+- O PING utiliza o protocolo ICMP para enviar pacotes para um determinado destino e como resposta recebe outro informando que a entrega foi bem sucedida. O nome é uma analogia ao jogo de Ping Pong, onde cliente e servidor trocar pacotes da mesma forma que jogadores rebatem a bolinha de um lado para o outro.
+
+- Porém, determinados servidores podem implementar em suas regras de Firewall para que esse protocolo não esteja disponível para comunicação. Portanto, se o pacote enviado sofre *timeout*, isso não significa necessariamente que o destino em questão encontra-se com falha. Pode significar apenas que àquele servidor em específico não aceita comunicações utilizando esse protocolo.
+
+- Seu uso é indicado para verificar questões de latência (tempo entre o envio do pacote e o recebimento da resposta).
+
+![PING - Sucesso](Imagens/PING%20-%20Sucesso.png)
+![PING - Timeout](Imagens/PING%20-%20Timeout.png)
+
+- No primeiro exemplo acima, é realizado um PING para um dos servidores DNS da Google e podemos perceber a entrega e a resposta foram bem sucedidas. Na segunda imagem, é realizado o mesmo comando, dessa vez para o site do Governo Federal e podemos perceber que as requisições sofreram *timeout*, porém, se tentamos acessar site via Browser, o mesmo abre normalmente, o que nos leva a entender que o servidor apenas não permite comunicações utilizando o protocolo ICMP.
+  - O parâmetro `-n` indica o número de pacotes que desejamos enviar;
+  - Para conhecer os outros parâmetros existentes, utilizar o `--help`.
+
+- O comando é o mesmo para Windows e Linux.
+
+### :arrow_right: TRACEROUTE/TRACERT
+
+- Esse comando é utilizado para visualizar a rota realizada por um pacote a partir de uma origem (por padrão, a máquina onde o mesmo está sendo executado) até um determinado destino.
+
+- Nos Sistemas Operacionais baseados em UNIX, o comando é o `traceroute`. Já no caso do Windows, o comando é o `tracert`.
+
+![TRACERT](Imagens/TRACERT.png)
+
+- Por padrão, são realizados no máximo trinta saltos para se alcançar o endereço de destino e em cada um deles são enviados três pacotes.
+
+- Os valores numéricos retornados são os tempos, em milissegundos, entre envio e recebimento da resposta. O nome, mais a direita, é o endereço IP ou hostname da máquina pelo qual o pacote passou para atingir o destino.
+  - Quando um pacote retorna `*` significa que o mesmo se perdeu na rede;
+
+- Podemos perceber que o hostname da máquina do primeiro salto é `menuvivofibra.br [192.168.15.1]`. Essa máquina nada mais é do que o Gateway Padrão da minha rede doméstica, que é um ponto de acesso fornecido pelo meu provedor de serviço de Internet. Sempre que desejarmos acessar um endereço fora da rede local, ele sempre será o primeiro salto. Caso eu tente realizar o comando para atingir um equipamento dentro da minha própria rede, os pacotes não passarão por ele.
+
+- É possível utilizar um parâmetro para definir qual o protocolo utilizado para o envio dos pacotes: ICMP, TCP, UDP, etc. Por padrão, é utilizado o UDP.
+
+- Se jogarmos o resultado do comando no [Visual Traceroute](https://whatismyip.com.br/visualtraceroute.php), é possível ver o caminho pelo qual o pacote passou pelo Google Maps.

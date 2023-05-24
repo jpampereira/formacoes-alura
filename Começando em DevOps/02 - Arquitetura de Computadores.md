@@ -2,7 +2,7 @@
 
 ## :one: Como o computador lê o seu código?
 
-### :arrow-right: Linguagens
+### :arrow_right: Linguagens
 
 - As aplicações são desenvolvidas utilizando linguagens de programação, ao qual chamamos de **linguagens de alto nível**, como por exemplo, Java, Python, JavaScript, PHP, etc. Essa linguagens se assemelham a linguagem utilizada por nós humanos e costumeiramente são escritas em inglês.
 
@@ -28,7 +28,7 @@
   guarda c
   ```
 
-### :arrow-right: Compiladores x Interpretadores
+### :arrow_right: Compiladores x Interpretadores
 
 - O processo de tradução do código escrito em linguagem de alto nível para linguagem de máquina (binário) pode ser feito de duas formas: compilação e interpretação.
 
@@ -230,7 +230,7 @@
 
 ## :four: Como a memória funciona?
 
-### :arrow-right: Memória Cache
+### :arrow_right: Memória Cache
 
 - Nos tópicos anteriores, vimos o papel e o funcionamento de cada um dos componentes que compõe um computador, tanto eles separados quanto em conjunto.
 
@@ -252,7 +252,7 @@
 
 - Algumas linguagens de programação podem ser influencidas pela disposição das instruções no código. Isso porque, sempre que o Processador fosse buscar a próxima instrução em Cache, verificaria que ela não estaria lá, sendo necessária a busca diretamente na memória RAM. Linguagens que conseguem otimizar essa questão, tornando-o o problema quase imperceptível para o executor, são chamadas de linguagens *cache-friendly*.
 
-### :arrow-right: Hierarquia de Memórias
+### :arrow_right: Hierarquia de Memórias
 
 - Até o momento foram apresentadas diferentes tipos de memórias: HD, SSD, Memória RAM, Memória ROM, Memória Cache, etc. E quando apresentadas cada uma delas, foram destacados os seguintes pontos:
   1. Custo da Memória;
@@ -270,7 +270,7 @@
 
 - Quanto mais subimos na pirâmide, maior a velocidade de acesso aos dados. Quanto mais descemos na pirâmide, maior a capacidade de armazenamento.
 
-### :arrow-right: Fitas Magnéticas
+### :arrow_right: Fitas Magnéticas
 
 - O uso de **Fitas Magnéticas** para armazenamento de dados foi muito popular entre os anos 1970 e 1990, como por exemplo, para o armazenamento de músicas e filmes, utilizando Fitas Cassetes. Porém, pro incriível que pareça, elas ainda são utilizadas nos dias de hoje, mas para armazenar outros tipos de dados.
 
@@ -278,7 +278,7 @@
 
 - Essas vantagens justificam o uso de Fitas Magnéticas para o armazenamento de grandes quantidades que dificilmente serão revisitados, como backups, arquivos Nacionais, grandes filmes e até mesmo bancos. Por exemplo, a Organização Europeia para Pesquisas Nucleares (CERN), utiliza essa tecnologia para armazenar os 1GB por segundo de dados que eles captam em pesquisas.
 
-### :arrow-right: Processador de 32 ou 64 bits
+### :arrow_right: Processador de 32 ou 64 bits
 
 - Quando vamos instalar um programa em nossa máquina, nos deparamos com diferentes tipos de instaladores, que se diferenciam pelo Sistema Operacional, além da seguinte informação: 32 bit e 64 bit. Mas o que seria isso?
 
@@ -292,7 +292,7 @@
 
 ## :five: Como os dados são armazenados?
 
-### :arrow-right: Caracteres
+### :arrow_right: Caracteres
 
 - Para representarmos os caractéres como instruções para o computador utilizamos números inteiros, que podem ser convertidos em bits e serem compreendidos pela CPU.
 
