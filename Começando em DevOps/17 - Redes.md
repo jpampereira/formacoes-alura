@@ -74,6 +74,7 @@
   ```
 
   - Esse comando é muito utilizado para debugar e encontrar possíveis falhas de DNS;
+  - Por padrão, o IP retornado vem no formato IPv4. Para visualizar o IPv6, basta inserir o parâmetro `AAAA`;
   - Exemplo:
 
     ![Comando dig](Imagens/Linux%20Terminal%20-%20Comando%20dig.png)
@@ -160,3 +161,54 @@
 - É possível utilizar um parâmetro para definir qual o protocolo utilizado para o envio dos pacotes: ICMP, TCP, UDP, etc. Por padrão, é utilizado o UDP.
 
 - Se jogarmos o resultado do comando no [Visual Traceroute](https://whatismyip.com.br/visualtraceroute.php), é possível ver o caminho pelo qual o pacote passou pelo Google Maps.
+
+## :five: Portas
+
+- Quando enviamos um pacote para um determinado servidor, é necessário informar a porta para o qual o mesmo deve ser enviado, indicando o serviço para o qual aquele dado deve ser enviado.
+
+- Analogia: quando enviamos uma carta pelo correio, inserimos no campo de destinatário o endereço, isto é, logradouro e número, para o qual desejamos enviar aquela correspondência. Se o destinatário for um prédio, é necessário informar também o número para o qual a carta deve ser enviada, caso contrário, ela chegaria na portaria e porteiro não saberia para onde encaminhá-la.
+  - Nesse exemplo, a carta seria o pacote, o prédio seria o servidor e o apartamento seria a porta.
+
+- O arquivo `/etc/services` as portas que estão reservadas para determinados serviços.
+  
+- As primeiras 1024 portas são reservadas para processos específicos.
+  - Exemplos:
+
+    | Porta | Serviço                      |
+    | :---: | :--------------------------: |
+    | 20    | FTP (Transferência de dados) |
+    | 21    | FTP (Autenticação)           |
+    | 22    | SSH                          |
+    | 23    | Telnet                       |
+    | 80    | HTTP                         |
+    | 443   | HTTPS                        |
+
+- O Telnet é um protocolo para realizar acesso remoto. Porém, ele não é recomendado nos dias de hoje por não possuir criptografia, sendo substituído pelo SSH. Porém, ele é uma alternativa para se realizar diagnóstico de rede.
+  - Foi explicado anteriormente que o insucesso da execução do comando PING não significa que o destino em questão encontra-se indisponível, podendo ser apenas uma restrição criada por regra de firewall para impedir interações utilizando o protocolo ICMP. Uma alternativa é utilizar o Telnet:
+
+  ```Bash
+    telnet www.gov.br 80
+  ```
+
+  - Se tentarmos acessar a porta 23 (padrão Telnet), a ação não será bem sucedidade. Porém, se tentarmos conectar na porta 80, vamos receber um sinal positivo sobre a tentativa de conexão.
+
+- Outra alternativa é utilizar o `curl`. Ele é uma ferramenta que permite realizar requisições HTTP através da linha de comando.
+
+## :six: NAT (Network Address Translation)
+
+- Após todos os conteúdos apresentados, talvez um questionamento apareça: se os endereços IPs que utilizamos em redes internas, sejam elas domésticas ou corporativas, não são visíveis e muito menos roteáveis para o resto da Internet, como um serviço responde por uma requisição, se o endereço do remetente não é roteável?
+
+- No início dos anos 90 já existiam estudos que mostravam que em poucos anos os endereços IP válidos se esgotariam, sendo necessário aumentar a gama de valores afim de suportar mais máquinas. Foi proposto então a mudança do IPv4 para o IPv6, aumentando de 32 para 128 bits o tamanho desses endereços, permitindo assim que muitas mais máquinas se conectassem a rede. Como essa mudança afetaria consideravelmente a disponibilidade da rede, ela precisou ser feita de forma gradual e para permitir que novos dispositivos se conectassem a rede enquanto a alteração fosse acontecendo, algumas técnicas foram criadas, aumentando o tempo de vida do IPv4. Entre as propostas está o *Network Address Translation* (NAT), em português, Tradução de Endereços de Rede.
+
+- Quando você assina um serviço para fornecimento de Internet, comumente esse serviço chega através de cabos coaxiais ou fibra ótica, que são ligados a um Modem/Roteador, muitas vezes oferecido pela própria provedora. Quando esse dispositivo é conectado, automaticamente ele recebe um endereço IP válido, também conhecido como IP Público. Esse endereço é acessável a partir de qualquer ponto da Internet e expõe sua rede local para o mundo.
+
+- Na mesma rede, mas internamente, quando um dispositivo se conecta a ela, seja via Wi-Fi ou a cabo, ele recebe um endereço IP dentro do range especificado para redes locais, não sendo possível acessá-lo de fora dessa rede. A esse tipo de endereço, damos o nome de IP Privado.
+  - O fornecimento do endereço IP é feito por um protocolo chamado DHCP (*Dynamic Host Configuration Protocol*), que vem instalando no seu roteador.
+
+- Quando realizamos uma requisição HTTP, por exemplo, para acessar uma determinada página Web, no que esse pacote sai da nossa máquina, o endereço de origem informado no pacote é o IP Privado da nossa máquina. Quando esses pacotes chegam ao Gateway Padrão (geralmente o roteador doméstico), antes de sair para a Internet, um processo interno altera o endereço de origem para o IP Público. Assim, quando o destino precisar devolver uma resposta para a requisição, ele saberá para onde deve enviá-la, pois o endereço de origem informado é roteável. Esse processo que altera entre IP Privado e Público é feito pelo NAT.
+
+- Existe um comando que nos permite verificar o IP Público da nossa rede:
+
+  ```Bash
+    curl ifconfig.me
+  ```
