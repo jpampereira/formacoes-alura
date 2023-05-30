@@ -426,6 +426,8 @@
 
   - O valor de `name` em `configMapRef` deve ser o mesmo nome dado ao ConfigMap no seu arquivo de definição em `metadata`.
 
+- Os comandos para criar, listar, editar e remover um ConfigMap são os mesmos utilizados em Pods e Services.
+
 ## :seven: Projeto
 
 - Na imagem abaixo pode-se visualizar a disposição dos Pods e Services criados durante o projeto:
