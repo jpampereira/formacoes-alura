@@ -151,6 +151,8 @@
   ```Windows
     kubectl delete pod <nome-pod>
   ```
+  
+  - O parâmetro `--all` deleta todos os Pods existentes no Cluster.
 
 ### :arrow_right: Comandos Declarativos
 
@@ -193,3 +195,239 @@
   ```Windows
     kubectl delete -f <caminho-arquivo>
   ```
+
+## :five: Services
+
+- Seja o exemplo acima onde criamos e inicializamos um Pod com um Nginx. Se executarmos o comando `kubectl get pods -o wide`, podemos visualizar o IP atribuído a este Pod no campo `IP`. Se tentarmos acessar a página padrão criada pelo Nginx, via Browser, no endereço obtido no comando anterior, verificaremos que o mesmo é inalcançável.
+
+- Se tivermos uma aplicação composta por diferentes Pods que se comunicam, em algum momento um deles pode ficar indisponível, e quando o Control Manager perceber, irá reiniciá-lo. Acontece que ao reiniciá-lo, não necessariamente o endereço IP atribuído a ele será o mesmo, o que pode causa confusão nos demais Pods que se comunicam com ele.
+
+- Ambos os casos relatados acima são resolvidos com o **Service**, um recurso do Kubernetes que:
+  - Permite expor aplicações para serem acessadas de fora do Pod;
+  - Provê endereços IP fixos para comunicação;
+  - Provê um DNS para um ou mais Pods;
+  - Capaz de fazer balanceamento de carga.
+
+- Existem três tipos de Services: ClusterIP, NodePort e LoadBalancer.
+
+### :arrow_right: ClusterIP
+
+- Permite a comunicação entre diferentes Pods em um mesmo Cluster.
+
+![ClusterIP](Imagens/ClusterIP.png)
+
+- Utilizando a imagem acima como exemplo, seja um Cluster que contêm 4 Pods que inicialmente não conseguem se comunicar, porém, a ideia é que todos tenham acesso ao Pod com endereço IP `10.0.0.1` (Pod 1). Para permitir o acesso a esse Pod, é necessário inserir um Service, habilitando seu acesso.
+  - Esse Service permite que os demais Pods do Cluster acessem o 1 em um endereço IP atribuído em sua criação, porém, o inverso não é verdadeiro. O Pod 1 seguirá sem acesso aos demais, sendo necessário adicionar Services para os outros para habilitarem os seus acessos.
+  - Caso tente-se acessar o Pod de fora do Cluster, a operação não será bem sucedida, uma vez que Services do tipo ClusterIP são utilizados apenas para comunicação interna do Cluster.
+
+![ClusterIP - Exemplo](Imagens/ClusterIP%20-%20Exemplo.png)
+
+- Sejam os Pods [pod-1](Arquivos/pod-1.yaml), [pod-2](Arquivos/pod-2.yaml) e [portal-noticias](Arquivos/portal-de-noticias.yaml) (Links levam para os arquivos `.yaml`). Desejamos criar um Service para habilitar o `pod-2`.
+
+- Precisamos criar o arquivo do Service:
+
+  ```YAML
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: svc-pod-2
+    spec:
+      type: ClusterIP
+      selector:
+        app: segundo-pod
+      ports:
+        - port: 9000
+          targetPort: 80
+  ```
+
+  - **kind:** Dessa vez não estamos criando um Pod e sim um Service;
+  - **type:** Define o tipo do Service. Neste caso, um ClusterIP;
+  - **port:** Define a porta que o Service irá escutar;
+  - **targetPort:** Define a porta para o qual o Service encaminhará a requisição (Caso a porta do Service e do Pod sejam as mesmas, basta declarar apenas `port`).
+
+- O Arquivo do `pod-2` será o seguinte:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-2
+      labels:
+        app: segundo-pod
+    spec:
+      containers:
+        - name: container-pod-2
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+  ```
+
+  - O código acima é similar aos já apresentados anteriormente para criação de Pods, com duas diferenças:
+    - **labels:** Esse campo é a forma para o Service saber para qual Pod ele deve encaminhar a requisição recebida. No arquivo do Service, esse label deve ser passado em **selector**;
+    - **containerPort:** Define a porta no qual o Pod receberá as requisições.
+
+- Para listar os Services:
+
+  ```Windows
+    kubectl get svc
+  ```
+
+- Os demais comandos são os mesmos realizados para Pods, basta trocar `pod` por `svc`.
+
+- Nesse momento, se tentarmos realizar uma requisição, a partir do `pod-1` ao `pod-2`, vamos obter o seguinte resultado:
+
+  ![ClusterIP - Resultado](Imagens/ClusterIP%20-%20Resultado.png)
+
+### :arrow_right: NodePort
+
+- A ideia agora é permitir o acesso ao Pod de fora do Cluster. Nesse caso utilizaremos um Service do tipo **NodePort**.
+
+![NodePort](Imagens/NodePort.png)
+
+- Um NodePort também é um ClusterIP, ou seja, libera tanto o acesso de fora quanto de dentro do Cluster.
+
+- Utilizando o exemplo do tópico anterior, vamos adicionar um Service em `pod-1` para permitir o acesso a ele tanto de dentro do Cluster quando de fora.
+
+- O arquivo do Service será o seguinte:
+
+  ```YAML
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: svc-pod-1
+    spec:
+      type: NodePort
+      ports:
+        - port: 80
+          # targetPort: 80
+          nodePort: 30000
+      selector:
+        app: primeiro-pod
+  ```
+
+- O arquivo do `pod-1` será modificado para o seguinte:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-1
+      labels:
+        app: primeiro-pod
+    spec:
+      containers:
+        - name: container-pod-1
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+  ```
+
+- A configuração é semelhante ao Service do tipo ClusterIP para o `pod-2`, com as únicas diferenças sendo o valor de `type` e a presença do atributo `nodePort`.
+
+![NodePort - Comandos](Imagens/NodePort%20-%20Comandos.png)
+
+- Quando executamos o comando `kubectl get svc`, é exibido o endereço IP de `svc-pod-1`, em `CLUSTER-IP`, como `10.104.44.245`. Porém, devemos tomar cuidado, pois esse IP funcionará apenas dentro do Cluster, isto é, para outro Pod no mesmo Cluster acessar o `pod-1`, deve utilizá-lo. Para realizar o acesso de fora do Cluster, deve-se utilizar o endereço IP do Node, que pode ser obtido no comando `kubectl get node`, no campo `INTERNAL-IP`.
+  - No Windows, o endereço do Node será sempre o `localhost`. No caso do Linux, deve-se verificar, pois o Minikube atribui o IP randomicamente;
+  - As portas utilizadas de fora do Cluster e dentro também são diferentes. No comando `kubectl get svc` podemos ver que no campo `PORT(S)` é apresentado o valor `80:30000`. O valor à esquerda deve-se ser utilizado para acessar o Serviço internamento no Cluster, a porta à direita deve ser utilizada para acessá-lo externamente;
+  - Caso não especificada no arquivo, o valor da porta externa será atribuído de forma randômica entre 30000 e 32767. Para especificar a porta, utiliza-se o atributo `nodePort` no arquivo do Service.
+
+### :arrow_right: LoadBalancer
+
+- O Service do tipo **LoadBalancer** nada mais é do que um NodePort que se integra diretamente com o Load Balancer do provedor de serviço de Nuvem, fazendo com que o acesso seja feito através do endereço disponibilizado pelo provedor.
+
+![LoadBalancer](Imagens/LoadBalancer.png)
+
+- Para o caso onde nossos Cluster está dentro do Google Cloud e gostariamos de disponibilizar o acesso ao `pod-1`:
+
+  ```YAML
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: svc-pod-1-loadbalancer
+    spec:
+      type: LoadBalancer
+      ports:
+        - port: 80
+          nodePort: 30000
+      selector:
+        app: primeiro-pod
+  ```
+
+## :six: ConfigMap
+
+- Se tentarmos executar o projeto nesse momento, vamos verificar que todos os Pods criados estão funcionando corretamente, porém, se tentarmos acessar o `db-noticias`, vamos nos deparar com uma mensagem de erro informando que não foi possível estabelecer contato entre o front-end e o banco de dados da solução.
+
+- Se analisarmos a documentação do MySQL, que é a solução de Sistema Gerenciador de Banco de Dados utilizada no projeto, vamos encontrar uma seção que diz respeito as variáveis de ambiente que devem ser criadas no sistema, sendo algumas delas obrigatórias, como a senha do usuário root, e outras opcionais, como definir um banco de dados padrão ou um usuário e senha que não o root.
+
+- Para criarmos essas variáveis de ambiente dentro do Pod, podemos editar o arquivo `db-noticias.yaml` da seguinte forma:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: db-noticias
+      labels:
+        app: db-noticias
+    spec:
+      containers:
+        - name: db-noticias-container
+          image: aluracursos/mysql-db:1
+          ports:
+            - containerPort: 3306
+          env:
+            - name: "MYSQL_ROOT_PASSWORD"
+              value: "q1w2e3r4"
+            - name: "MYSQL_DATABASE"
+              value: "empresa"
+            - name: "MYSQL_PASSWORD"
+              value: "q1w2e3r4"
+    ```
+
+- Porém, se analisarmos bem, vamos perceber que estamos misturando configurações da imagem do nosso Pod com configurações do sistema (usuário, senha, banco de dados, etc.), deixando esse YAML muito vinculado a essa solução, não sendo possível reaproveitar essas variáveis em outras situações.
+
+- Para solucionar essa questão, o Kubernetes já possui um recurso pronto chamado **ConfigMap**, que permite desvincular configurações da imagem de configurações do sistema e possibilita o reaproveitamento dessas configurações por diferentes Pods.
+
+![ConfigMap](Imagens/ConfigMap.png)
+
+- Transportando essas variáveis de ambiente para um arquivo de ConfigMap, ficaria da seguinte forma:
+
+  ```YAML
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: db-configmap
+    data:
+      MYSQL_ROOT_PASSWORD: "q1w2e3r4"
+      MYSQL_DATABASE: "empresa"
+      MYSQL_PASSWORD: "q1w2e3r4"
+  ```
+
+  - As variáveis são listadas abaixo do atributo `data` e colocadas no formato chave-valor, sendo o valor à esquerda o nome da variável de ambiente (sempre em maiúsculo) e à direita seu valor correspondente.
+
+- É necessário agora importar essas variáveis de ambiente para dentro do Pod:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: db-noticias
+      labels:
+        app: db-noticias
+    spec:
+      containers:
+        - name: db-noticias-container
+          image: aluracursos/mysql-db:1
+          ports:
+            - containerPort: 3306 
+          envFrom:
+            - configMapRef:
+                name: db-configmap
+  ```
+
+  - O valor de `name` em `configMapRef` deve ser o mesmo nome dado ao ConfigMap no seu arquivo de definição em `metadata`.
+
+## :seven: Projeto
+
+- Na imagem abaixo pode-se visualizar a disposição dos Pods e Services criados durante o projeto:
+
+  ![Projeto](Imagens/Projeto.png)
