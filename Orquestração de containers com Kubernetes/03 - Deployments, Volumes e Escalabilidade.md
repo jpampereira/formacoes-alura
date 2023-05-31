@@ -115,3 +115,129 @@
   ![Deployment - Projeto](Imagens/Deployment%20-%20Projeto.png)
 
 - Os comandos para criar, listar, editar e remover um Deployment são os mesmos utilizados pelos recursos anteriores.
+
+## :three: Persistência de Dados
+
+- Estamos tendo um problema com o projeto que ao reiniciar um Pod, todo seu conteúdo, no caso, as notícias criadas através do Sistema de Notícias, são perdidas. Para não perder esses dados, precisamos persistí-los de alguma forma, e o Kubernetes já possui recursos para nos ajudar nessa questão.
+
+### :arrow_right: Volumes
+
+- Os **Volumes** são similares aos existentes em Docker, onde mapeamos um ponto entre o sistema de arquivos do container e da máquina host para realizar o compartilhamento de dados.
+
+![Volumes - Exemplo](Imagens/Volumes%20-%20Exemplo.png)
+
+- Os Volumes são independentes do ciclo de vida dos containers, isto é, caso um container caia, o Volume permanecerá existindo. Porém, se o Pod, seja por la qual motivo, cair, os Volumes relacionados serão removidos, pois nesse caso há uma relação de dependência.
+
+- Existem diferentes tipos de Volumes, mas vamos tratar aqui do Volume já conhecido por quem já estudou Docker que são os Volumes baseados em caminhos no Sistema de Arquivos, chamado de `hostPath`. Nesse tipo de Volume, especificamos um caminho dentro da máquina host e outro dentro do container e tudo o que for criado em um, será replicado no outro.
+
+- No exemplo do `hostPath`, após a remoção dos volumes, os arquivos criado nesse ponto mapeado permanecerão existindo na máquina host. Caso o volume seja criado novamente, os arquivos ainda existirão.
+
+- Para criar um Volume:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-volume
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx:latest
+          volumeMounts:
+            - mountPath: /volume-dentro-do-container
+              name: primeiro-volume
+        - name: jenkins-container
+          image: jenkins/jenkins
+          volumeMounts:
+            - mountPath: /volume-dentro-do-container
+              name: primeiro-volume
+      volumes:
+        - name: primeiro-volume
+          hostPath:
+            path: /run/desktop/mnt/host/c/Users/jpamp/OneDrive/Área de Trabalho/primeiro-volume
+            type: Directory
+  ```
+
+  - O Volume é criado diretamente dentro do arquivo de configuração do Pod, mas o procedimento seria o mesmo se criado em um ReplicaSet ou Deployment;
+  - Como explicado anteriormente, o Volume está relacionado ao ciclo de via do Pod, isto é, se ele cai, o Volume é removido. Portanto, quando vamos declarar o Volume, devemos colocá-lo nas especificações do Pod e não do container, por isso `volumes` e `containers` ficam no mesmo nível hierarquico do arquivo;
+  - O tipo `hostPath` é utilizado para mapear um ponto do sistema de arquivo da máquina host, especificado em `path`, enquanto `type` indica o que está sendo mapeado: um arquivo, um diretório, etc;
+  - Nas especificações do container, é necessário determinar, em `mountPath`, em qual ponto do seu sistema de arquivos será realizado o mapeamento do volume. Em `name` deve-se indicar qual o volume que será mapeado;
+  - Como podemos perceber, o Pod da configuração acima possui dois containers, um para o Nginx e outro para o Jenkins. Para delimitar o fim das configurações de um container e início do outro, é utilizado o hífen, seguido do atributo `name`.
+
+- Caso o `type` for um diretório, porém, o mesmo não existir no sistema de arquivos, um problema ocorrerá e o Pod não será criado. Porém, podemos utilizar o tipo `DirectoryOrCreate` para dizer ao Kubernetes para ele criar o diretório caso ele não o encontre no caminho passado.
+
+- É necessário entender que para os Pods, a máquina host no caso é o Cluster, onde de fato eles são armazenados. Portanto, os caminhos absolutos passados em `path` não podem iniciar do diretório raiz do Sistema de Arquivos da máquina usuária. No caso do Windows, o Cluster virtualizado é criado automaticamente quando o Kubernetes é habilitado através do Docker Desktop. No Linux, o Cluster virtualizado é criado utilizando o Minikube.
+  - No Windows, o caminho em `path` deve sempre começar com `/run/desktop/mnt/host/c`, sendo `c` a pasta `C:`. Esse é o caminho a partir do diretório raiz do sistema de arquivos do Cluster virtualizado até o diretório raiz do sistema de arquivos da máquina host.
+  - No caso do Linux, é necessário acessar o Minikube utilizando o comando `minikube ssh` e criar dentro da máquina virtual os arquivos e diretórios que devem ser mapeados.
+
+### :arrow_right: PersistentVolumes
+
+- Os **PersistentVolumes** são uma alternativa onde o Volume não possui dependencia do ciclo de vida de um Pod, isto é, caso o Pod seja removido, seja por lá qual motivo, o volume seguirá existindo.
+
+![PersistentVolumes](Imagens/PersistentVolume.png)
+
+- O PersistentVolume funciona como uma API que irá abstrair a forma como os dados são armazenados e acessados.
+
+- Para um Pod acessar um PersistentVolume (PV), ele utiliza uma camada intermediária chamada PersistenVolumeClaim (PVC).
+
+- Para criar um PersistentVolume:
+
+  ```YAML
+    apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: pv-1
+    spec:
+      capacity:
+        storage: 10Gi
+      accessModes:
+        - ReadWriteOnce
+        # - ReadWriteMany
+        # - ReadOnlyMany
+      gcePersistentDisk:
+        pdName: pv-disk
+      storageClassName: standard
+  ```
+
+  - É necessário informar a capacidade de armazenamento do volume em `capacity`, sendo no exemplo acima 10 Gigabytes;
+  - É preciso também definir o formato de acesso em `accessModes`, se é apenas leitura, leitura e escrita e se os dados podem ser manipulados um usuário por vez ou vários ao mesmo tempo.
+
+- Para criar um PersistentVolumeClaim:
+
+  ```YAML
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: pvc-1
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+    storageClassName: standard
+  ```
+
+  - O Kubernetes irá associar o PV e o PVC através de suas configurações, ou seja, ambos os recursos devem possuir os mesmos `accessMode`, `storage`, etc.
+
+- Como deve ser configurado o Pod:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-pv
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx:latest
+          volumeMounts:
+            - mountPath: /volume-dentro-do-container
+              name: primeiro-pv
+      volumes:
+        - name: primeiro-pv
+          persistentVolumeClaim:
+            claimName: pvc-1
+  ```
+
+  - A criação do volume dentro do container é igual a vista no tópico anterior. A diferença vai ser nas especificações do volume, onde será utilizada o tipo `persistentVolumeClaim`, ao invés de `hostPath`, e será passado em `claimName` o mesmo nome definido nos metadados do arquivo de configuração do PVC.

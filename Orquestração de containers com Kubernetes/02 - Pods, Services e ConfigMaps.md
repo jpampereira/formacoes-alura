@@ -130,6 +130,18 @@
       1. No primeiro passo, o **scheduler** atribuiu o Pod `nginx-pod` à máquina `docker-desktop`, que faz parte do Cluster local criado na minha máquina;
       2. Em seguida, uma série de operações realizadas pelo **kubelet**, responsável pela operação dos containers: baixou a imagem do nginx na versão latest, criou o container dentro do Pod nginx-pod e o iniciou.
 
+- Para executar um comando de forma interativa no Pod:
+
+  ```Windows
+    kubectl exec -it <nome-pod> -- <comando>
+  ```
+
+- Caso o Pod possua mais de um container, podemos especificar o container no qual desejamos executar o comando;
+
+    ```Windows
+    kubectl exec -it --container <nome-container> -- <comando>
+  ```
+
 - Para editar um Pod:
 
   ```Windows
