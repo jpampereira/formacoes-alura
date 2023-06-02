@@ -241,3 +241,133 @@
   ```
 
   - A criação do volume dentro do container é igual a vista no tópico anterior. A diferença vai ser nas especificações do volume, onde será utilizada o tipo `persistentVolumeClaim`, ao invés de `hostPath`, e será passado em `claimName` o mesmo nome definido nos metadados do arquivo de configuração do PVC.
+
+### :arrow_right: StorageClasses
+
+- Para apresentar o conceito de PersistentVolume no tópico anterior, o instrutor exemplificou utilizando o Kubernetes Plataform no Google Cloud. Para isso, ele precisou criar manualmente um disco para armazenar os dados do volume, além de criar manualmente o PersistentVolume. Os **StoragesClasses** permitem automatizar esse processo de criação tanto do disco quanto do PersistentVolume, basta criar um PersistentVolumeClaim e associá-lo a um StorageClass.
+
+![StorageClass](Imagens/Storage%20Classes.png)
+
+- Para criar o StorageClass:
+
+  ```YAML
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClasses
+    metadata:
+      name: slow
+    provisioner: kubernetes.io/gce-pd
+    parameters:
+      type: pd-standard
+      fstype: ext4
+  ```
+
+  - É necessário informar em `provisioner`, a plataforma que irá provisionar a criação do disco para armazenar o volume (Nesse exemplo, será o Google Computing Engine), o tipo do disco em `type` (Para disco rígido será `pd-standard` - valor padrão - e SSD `pd-ssd`) e o sistema de arquivos suportado em `fstype`.
+
+- Para criar o PersistentVolumeClaim:
+
+  ```YAML
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: pvc-2
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: slow
+  ```
+
+  - Para associar o PVC ao StorageClass, o valor de `storageClassName` deve ser o mesmo de `name` nos metadados do arquivo de configuração do StorageClass.;
+  - As configurações de `accessModes` e `storage` serão replicadas para o PersistentVolume.
+
+- Após criar esses recursos, automaticamente um disco e o PersistentVolume serão criados.
+
+- As configurações do Pod serão identicas as vistas no tópico anterior:
+
+  ```YAML
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-sc
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx:latest
+          volumeMounts:
+            - mountPath: /volume-dentro-do-container
+              name: primeiro-pv
+      volumes:
+        - name: primeiro-pv
+          persistentVolumeClaim:
+            claimName: pvc-2
+  ```
+
+- Caso os StorageClasses forem utilizados localmente, não há o provisionamento de memória dinamicamente, porém, pode ser utilizado para retardar a criação do PersistentVolume até que um Pod seja instanciado (isso é definido pelo `volumeBindingMode` igual a `WaitForFirstConsumer`):
+
+  ```YAML
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+      name: local-storage
+    provisioner: kubernetes.io/no-provisioner
+    volumeBindingMode: WaitForFirstConsumer
+  ```
+
+### :arrow_right: StatefulSets
+
+- Um **StatefulSet** funciona similar a um Deployment, porém, é utilizado em casos onde os Pods precisam de persistência de dados.
+
+![StatefulSet](Imagens/StatefulSet.png)
+
+- Ao definir um Pod é necessário definir também um PersistentVolumeClaim.
+
+- Os Pods são criados junto de um identificador único. Caso por algum motivo o Pod venha a cair, o mesmo será recriado com o mesmo ID assim continuando vinculado ao mesmo PersistentVolume.
+
+- Para configurar um StatefulSet:
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: sistema-noticias-statefulset
+    spec:
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: sistema-noticias
+          name: sistema-noticias
+        spec:
+          containers:
+            - name: sistema-noticias-container
+              image: aluracursos/sistema-noticias:1
+              ports:
+                - containerPort: 80
+              envFrom:
+                - configMapRef:
+                    name: sistema-configmap
+              volumeMounts:
+                - name: imagens
+                  mountPath: /var/www/html/uploads
+                - name: sessao
+                  mountPath: /tmp
+          volumes:
+            - name: imagens
+              persistentVolumeClaim:
+                claimName: imagens-pvc
+            - name: sessao
+              persistentVolumeClaim:
+                claimName: sessao-pvc
+      selector:
+        matchLabels:
+          app: sistema-noticias
+      serviceName: svc-sistema-noticias
+  ```
+
+  - Assim como um Deployment, é necessário definir o número de `replicas` do Pod que é configurado em `template`. A grande diferença para o Deployment é que é necessário criar os `volumes` nas especificações do Pod;
+  - É necessário também informar o `serviceName` que liberará o acesso aos containers desse Pod;
+  - Para criar o StatefulSet, o PersistentVolumeClaim já deve estar criado.
+
+- No arquivo de PersistentVolumeClaim responsável pelo acesso aos Volumes de `imagens` e `sessao`, nenhum StorageClass é definido, assim, o StorageClass padrão do Cluster é utilizado e o PersistentVolume criado automaticamente.
