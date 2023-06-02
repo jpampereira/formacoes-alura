@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: olamundo-pod
+spec:
+  containers:
+    - name: container-olamundo
+      image: ubuntu:22.04
+      command: ["/bin/sh", "-c"]
+      args: ["sleep 15 ; /bin/echo Olá, Mundo!"]

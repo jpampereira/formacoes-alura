@@ -371,3 +371,134 @@
   - Para criar o StatefulSet, o PersistentVolumeClaim já deve estar criado.
 
 - No arquivo de PersistentVolumeClaim responsável pelo acesso aos Volumes de `imagens` e `sessao`, nenhum StorageClass é definido, assim, o StorageClass padrão do Cluster é utilizado e o PersistentVolume criado automaticamente.
+
+## :four: Probes
+
+- Caso um Pod caia, podemos utilizar ReplicaSets, Deployments ou StatefulSets para identificar a instabilidade e reiniciá-lo. Porém, podem acontecer casos onde o Pod está com falhas que não causam sua queda, como por exemplo, retornando HTTP Error 500 em diversas requisições de uma API, sendo esses erros indetectáveis por parte desses recursos. Para tornar essas falhas visíveis, permitindo que o Pod seja reiniciado caso elas ocorram, podemos utilizar **Probes**.
+
+- As Probes podem realizar verificações de três formas:
+  - **Requisições HTTP GET** em um caminho e porta especificados no arquivo de configuração. Caso a resposta seja maior ou igual a 200 e menor do que 400, entende-se que o container está funcionando corretamente;
+  - **Estabelecimento de conexão TCP** em porta especificada no arquivo de configuração. Caso a conexão seja estabelecida, entende-se que o container está funcionando corretamente;
+  - **Executando comandos** como leitura de arquivos, execução de scripts, etc. Caso nenhum erro seja retornado na execução do comando, entende-se que o container está funcionando corretamente.
+
+### :arrow_right: Readiness Probe
+
+- Quando criamos um Pod, ele será de fato disponibilizado quando todos seus containers estiverem criados, ficando no estado de *Running*. Porém, pode ser que determinados containers demorem mais do que outros para ficarem pronto, fazendo com que o Pod seja disponibilizado antes mesmo da aplicação estar funcionando por completo. Podemos utilizar **Readiness Probes** para indicar para o Pod quando de fato o container foi criado e inicializado com sucesso.
+
+- Como configurar um Readiness Probe no seu Pod:
+
+  ```YAML
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: sistema-noticias-statefulset
+  spec:
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          app: sistema-noticias
+        name: sistema-noticias
+      spec:
+        containers:
+          - name: sistema-noticias-container
+            image: aluracursos/sistema-noticias:1
+            ports:
+              - containerPort: 80
+            envFrom:
+              - configMapRef:
+                  name: sistema-configmap
+            volumeMounts:
+              - name: imagens
+                mountPath: /var/www/html/uploads
+              - name: sessao
+                mountPath: /tmp
+            readinessProbe:
+                httpGet:
+                  path: /inserir_noticias.php
+                  port: 80
+                periodSeconds: 10
+                failureThreshold: 5
+                initialDelaySeconds: 3
+        volumes:
+          - name: imagens
+            persistentVolumeClaim:
+              claimName: imagens-pvc
+          - name: sessao
+            persistentVolumeClaim:
+              claimName: sessao-pvc
+    selector:
+      matchLabels:
+        app: sistema-noticias
+    serviceName: svc-sistema-noticias
+  ```
+
+  - No exemplo acima foi configurado um Readness Probe que indica que deve ser verificada a porta `80` na rota `/inserir_noticias.php` e caso essa requisição possua um status de sucesso (maior ou igual a 200 e menor do que 400), é indicado para o Pod que o container foi inicializado com sucesso.
+  - Podemos utilizar parâmetros para alterar o comportamente da Probe:
+
+    - `periodSeconds`: Define um intervalo, em segundos, de quanto em quanto tempo a verificação deve ser realizada;
+    - `failureThreshold`: Define um limiar de erros, isto é, caso sejam realizada X tentativas de conexão mal sucedidas, deve-se indicar que o container não foi inicializado com sucesso (Existe também o `successThreshold`, que tem a lógica inversa, onde podemos determinar quantas vezes uma requisição precisa ser bem sucedida para entendermos que o container está funcionando corretamente);
+    - `initialDelaySeconds`: Define um delay para o início das verificações.
+
+- Um contexto onde o uso de Readiness Probe se faz importante é quando desejamos realizar a troca de versão de Deployments, mas não desejamos que nossa aplicação fique um momento sequer fora do ar. Quando atualizamos um Pod, o Kubernetes só remove a versão antiga quando ele entende que a versão nova já está operacional. Se utilizarmos uma Readiness Probe, podemos indicar com precisão para o Kubernetes quando o Pod de fato está pronto e a versão antiga pode ser removida, evitando indisponibilidades.
+
+### :arrow_right: Liveness Probe
+
+- As **Liveness Probes** funcionam como *healtcheck*, isto é, verificam se o container está funcionando corretamente. Um exemplo é possuirmos um endpoint em nossa API chamado `SelfMonitoring` e pedirmos para nossa Probe enviar requisições HTTP do tipo GET, de tempos em tempos para ele, e caso um status fora da faixa maior ou igual a 200 e menor que 400 seja retornado, indica que a API está com problemas e que o container deve ser reiniciado imediatamente.
+
+- Para configurar um Liveness Probe no seu Pod:
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: portal-noticias-deployment
+    spec:
+      template:
+        metadata:
+          name: portal-noticias
+          labels:
+            app: portal-noticias
+        spec:
+          containers:
+            - name: portal-noticias-container
+              image: aluracursos/portal-noticias:1
+              ports:
+                - containerPort: 80
+              envFrom:
+                - configMapRef:
+                    name: portal-configmap
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 80
+                periodSeconds: 10
+                failureThreshold: 3
+                initialDelaySeconds: 20
+      replicas: 3
+      selector:
+        matchLabels:
+          app: portal-noticias
+  ```
+
+  - O exemplo é semelhante ao visto no tópico anterior de Readiness Probe. A diferença é que no caso anterior, a verificação era feita para determinar se o container já estava disponível, enquanto nesse caso é para verificar se ele está ativo.
+
+### :arrow_right: Exemplo 1
+
+- [Vídeo no Youtube](https://www.youtube.com/watch?v=WzQbGuVNr7c)
+
+- O vídeo acima apresenta uma explicação sobre as Probes Readiness e Liveness através de um exemplo onde é criada uma API utilizando Node.JS.
+
+- Para explicar o conceito da Readiness Probe, o instrutor adicionou um delay de 10 segundos utilizando `setTimeout` antes da API começar a escutar na porta 3000 e mostrou que mesmo com a API ainda não escutando requisições, que o Pod, quando criado, já recebia status de Running e era possível realizar requisições para aquele endpoint. Para solucionar esse problema, ele adicionou uam Readiness Probe dizendo que era para o Pod entender que a API estava operacional apenas quando uma requisição do HTTP tipo GET na porta 3000 obter sucesso, isto é, retornando um status maior ou igual a 200 e menor do que 400. A partir de então o Pod começou a ir para status de Running apenas quando de fato a API estava escutando na porta esperada.
+
+- Para explicar o conceito de Liveness Probe, o instrutor adicionou um contador que a cada vez uma requisição para o endpoint fosse realizada, ele era incrementado. Enquanto o contador tivesse valor menor do que 5, ele retorna HTTP status 200 e após esse limiar, começava a retornar o valor 500, simulando um erro na aplicação. Sem um Liveness Probe, o container nunca seria reiniciado, pois ele continua disponível, apesar de não estar funcionando corretamente. Com a adição do Liveness Probe, verificamos que nas 4 primeiras verificações, o status retornado era 200 e nada era feito. Na quinta requisição, o valor retornado era 500, a Probe identificava a falha e reiniciava o container. Após o reinício, as requisições voltavam ao status 200, até o momento em que se atingia a quinta requisição novamente, ficando nesse fluxo indefinidamente.
+
+### :arrow_right: Exemplo 2
+
+- [Vídeo no Youtube](https://www.youtube.com/watch?v=brQh8bjXL9Q)
+
+- Nesse segundo exemplo, o instrutor explica como funcionam as Liveness Probes a partir de um exemplo onde o *healthcheck* era feito através de comandos.
+
+- O instrutor configurou o container para, ao iniciar, criar um arquivo `/tmp/healthy`, esperar 30 segundos e realizar a remoção desse arquivo.
+
+- O *healthcheck* do container foi configurado para realizar de 5 em 5 segundos a leitura desse arquivo, com um delay inicial de também 5 segundos. Assim, nas primeiras 5 verificações (aos 5, 10, 15, 20 e 25 segundos), como o arquivo existia, o comando de leitura retorna status de sucesso, indicando que o arquivo existia e o container permanecia de pé. Na sexta verificação, aos 30 segundos, um erro na leitura foi retornado, alegando que o arquivo em questão não existia (e de fato não existia, pois foi removido), fazendo com que o container fosse reinicializado.
