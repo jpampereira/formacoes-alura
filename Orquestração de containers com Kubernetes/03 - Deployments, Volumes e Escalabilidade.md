@@ -502,3 +502,98 @@
 - O instrutor configurou o container para, ao iniciar, criar um arquivo `/tmp/healthy`, esperar 30 segundos e realizar a remoção desse arquivo.
 
 - O *healthcheck* do container foi configurado para realizar de 5 em 5 segundos a leitura desse arquivo, com um delay inicial de também 5 segundos. Assim, nas primeiras 5 verificações (aos 5, 10, 15, 20 e 25 segundos), como o arquivo existia, o comando de leitura retorna status de sucesso, indicando que o arquivo existia e o container permanecia de pé. Na sexta verificação, aos 30 segundos, um erro na leitura foi retornado, alegando que o arquivo em questão não existia (e de fato não existia, pois foi removido), fazendo com que o container fosse reinicializado.
+
+## :five: Escalando Pods Automaticamente
+
+- Seja o caso onde nossa aplicação recebe volumes de requisições completamente diferentes ao longo do dia, sendo uma quantidade altissima nos períodos da tarde e noite e poucas requisições no período da manhã. Pode acontecer desse aumento considerável cause alguma instabilidade por conta da carga de trabalho empregada ao Pod nos períodos, sendo interessante termos um recurso que consegue escalar um Pod, para aumentar a capacidade de processamento, sob demanda. Da mesma forma, é interessante que seja possível desescalar esse Pod, para economizar recursos da máquina, em nos períodos que não houverem muitas requisições.O Kubernetes possui esse recurso que é o **HorizontalPodAutoscaler** (HPA).
+  - O HPA análisa métricas de desempenho, como por exemplo CPU, para interpretar se deve aumentar ou diminuir recursos, isto é, o número de Pods para balanceamento de carga.
+
+- Primeiro é necessário definirmos no arquivo do nosso Pod a quantidade de recursos disponibilizado para ele (nesse exemplo, definiremos a quantidade de CPU disponível):
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: portal-noticias-deployment
+    spec:
+      template:
+        metadata:
+          name: portal-noticias
+          labels:
+            app: portal-noticias
+        spec:
+          containers:
+            - name: portal-noticias-container
+              image: aluracursos/portal-noticias:1
+              ports:
+                - containerPort: 80
+              envFrom:
+                - configMapRef:
+                    name: portal-configmap
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 80
+                periodSeconds: 10
+                failureThreshold: 3
+                initialDelaySeconds: 20
+              readinessProbe:
+                  httpGet:
+                    path: /
+                    port: 80
+                  periodSeconds: 10
+                  failureThreshold: 5
+                  initialDelaySeconds: 3
+              resources:
+                requests:
+                  cpu: 10m
+      replicas: 3
+      selector:
+        matchLabels:
+          app: portal-noticias
+  ```
+
+  - Em `resource` é definido que serão disponibilizados 10m de `cpu` para o Pod. Podem ser definidos outros limites, como por exemplo, `memory`.
+
+- Em seguida é necessário configurar o HPA:
+
+  ```YAML
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: portal-noticias-hpa
+    spec:
+      scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: portal-noticias-deployment
+      minReplicas: 1
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+  ```
+
+  - Em `scaleTargetRef` é necessário referenciar qual o Pod, Deployment, etc. que será monitorado e escalado pelo HPA, informando sua `apiVersion`, `kind` e `name`;
+  - Definir o número mínimo e máximo de réplicas respectivamente em `minReplicas` e `maxReplicas`;
+  - Definir em `metrics` quais serão as métricas monitoradas para definir como o Pod deve ser escalado. Nesse exemplo, será monitorada a utilização (`Utilization`) da  `cpu`, e caso atinja uma média de utilização (`averageUtilization`) acima de 50% da quantidade de CPU disponibilizada pela CPU (Definido no arquivo do Pod como `10m`), o Pod será escalado.
+
+- No Windows, é necessário utilizar um servidor de métricas, responsável por coletá-las da máquina e disponibilizá-las para o HPA. Esse servidor de métricas pode ser obtido no GitHub e está disponível no arquivo [components.yaml](./Arquivos/Projeto/components.yaml).
+  - No Linux, basta habilitar o servidor de métricas do Minikube através do seguinte comando:
+
+    ```Bash
+      minikube addons enable metrics-server
+    ```
+
+- Utilizando o arquivo [stress.sh](./Arquivos/Projeto/stress.sh), um Shell Script que executa múltiplas requisições ao endpoint do Pod do projeto realizado ao longo do curso, podemos ver o funcionamento do HPA:
+
+  ![HorizontalPodAutoscaler](Imagens/HorizontalPodAutoscaler.png)
+
+  - No exemplo acima, o Pod inicia com 3 réplicas, conforme configurado no arquivo. Porém, logo o HPA identifica que não há necessidade de se manter 3 cópías, sendo que apenas 10% dos recursos de CPU estão sendo utilizados. Conforme o arquivo `stress.sh` fosse executa mais vezes em paralelo, o número de requisições foi crescendo, aumentando a carga de trabalho do Pod que foi triplicado novamente. Ao final das execuções do script, o número de réplicas voltou para 1, pois a carga de trabalho voltou a ficar baixíssima, não havendo necessidade de se manter tantas cópias do Pod.
+  - Vale ressaltar que a versão do arquivo `stress.sh` realiza requisições para o Pod do projeto no endereço `localhost` pois, como já explicado, o Cluster virtualizado pelo Docker Desktop é configurado para o mesmo endereço da máquina host. No Linux, é necessário inserir o endereço IP vinculado ao Minikube.
+
+- É possível também escalar Pods verticalmente, utilizando o **VerticalPodAutoscaler**.
