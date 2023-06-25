@@ -121,3 +121,45 @@
   ![GKE - Conexão ao Cluster](Imagens/GKE%20-%20Conex%C3%A3o%20ao%20Cluster.png)
 
 - Após inserir o comando obtido no terminal e executá-lo, será possível manipular o Cluster a partir do terminal utilizando os comandos do `kubectl` já conhecidos.
+
+#### :arrow_right: Alocação de Pods em Nodes
+
+![Scheduler](Imagens/Scheduler.png)
+
+- Relembrando: O **Node Master** é responsável por alocar os **Pods** nos Nodes do **Cluster** através do **Scheduler**.
+
+- Na imagem abaixo vemos um Deployment com 3 réplicas, onde cada um dos Pods é armazenada em um Node diferente, garantindo a redundância da aplicação:
+
+  ![Alocação de Pods em Nodes](Imagens/GKE%20-%20Aloca%C3%A7%C3%A3o%20de%20Pods%20nos%20Nodes.png)
+
+#### :arrow_right: Manipulando Deployments
+
+- Na imagem abaixo podemos visualizar o comando `kubectl get nodes` sendo executado diretamente no terminal da máquina local e exibindo os três Nodes do Cluster criado na nuvem.
+
+  ![GKE - Listar Nodes do Cluster](Imagens/GKE%20-%20Listar%20Nodes%20do%20Cluster.png)
+
+- Na seção "Cargas de Trabalho", dentro do GKE, podemos visualizar nossos Pods existentes no Cluster:
+
+  ![GKE - Cargas de Trabalho](Imagens/GKE%20-%20Cargas%20de%20Trabalho.png)
+
+- Se entrarmos na página destinada ao nosso Deployment, podemos visualizar diversas informações sobre ele, como os Pods que o compõe:
+
+  ![GKE - Informações do Deployment](Imagens/GKE%20-%20Informa%C3%A7%C3%B5es%20do%20Deployment.png)
+
+#### :arrow_right: Criando Service
+
+- No exemplo apresentado, o Pod foi criado sem expô-lo através de um serviço. É possível fazer isso através da interface do GKE:
+
+  ![GKE - Criando Serviço - Parte 1](Imagens/GKE%20-%20Criando%20Servi%C3%A7o%20-%20Parte%201.png)
+
+- Na sequência é necessário indicar a porta exposta e a porta de destino, além do tipo do Service (**ClusterIP**, **NodePort** ou **Load Balancer**) e clicar em **Expor**:
+
+  ![GKE - Criando Serviço - Parte 2](Imagens/GKE%20-%20Criando%20Servi%C3%A7o%20-%20Parte%202.png)
+
+- Outra opção é clicar em **Ver YAML** e selecionar o conteúdo, inserí-lo em um arquivo `.yaml` e criar o Service do modo convencional através da linha de comando utilizando o comando `kubectl apply -f <nome-arquivo>.yaml`:
+
+  ![GKE - Criando Serviço - Parte 3](Imagens/GKE%20-%20Criando%20Servi%C3%A7o%20-%20Parte%203.png)
+
+- Na seção **Serviços e entradas** podemos visualizar todos os Services criados no nosso Cluster e em **Pontos de extremidade** o endpoint para acessarmos nossa aplicação:
+
+  ![GKE - Services](Imagens/GKE%20-%20Services.png)
