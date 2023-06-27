@@ -505,7 +505,7 @@
 
 ## :five: Escalando Pods Automaticamente
 
-- Seja o caso onde nossa aplicação recebe volumes de requisições completamente diferentes ao longo do dia, sendo uma quantidade altissima nos períodos da tarde e noite e poucas requisições no período da manhã. Pode acontecer desse aumento considerável cause alguma instabilidade por conta da carga de trabalho empregada ao Pod nos períodos, sendo interessante termos um recurso que consegue escalar um Pod, para aumentar a capacidade de processamento, sob demanda. Da mesma forma, é interessante que seja possível desescalar esse Pod, para economizar recursos da máquina, em nos períodos que não houverem muitas requisições.O Kubernetes possui esse recurso que é o **HorizontalPodAutoscaler** (HPA).
+- Seja o caso onde nossa aplicação recebe volumes de requisições completamente diferentes ao longo do dia, sendo uma quantidade altissima nos períodos da tarde e noite e poucas requisições no período da manhã. Pode acontecer desse aumento considerável cause alguma instabilidade por conta da carga de trabalho empregada ao Pod nos períodos, sendo interessante termos um recurso que consegue escalar um Pod, para aumentar a capacidade de processamento, sob demanda. Da mesma forma, é interessante que seja possível desescalar esse Pod, para economizar recursos da máquina, em nos períodos que não houverem muitas requisições. O Kubernetes possui esse recurso que é o **HorizontalPodAutoscaler** (HPA).
   - O HPA análisa métricas de desempenho, como por exemplo CPU, para interpretar se deve aumentar ou diminuir recursos, isto é, o número de Pods para balanceamento de carga.
 
 - Primeiro é necessário definirmos no arquivo do nosso Pod a quantidade de recursos disponibilizado para ele (nesse exemplo, definiremos a quantidade de CPU disponível):
@@ -553,7 +553,9 @@
           app: portal-noticias
   ```
 
-  - Em `resource` é definido que serão disponibilizados 10m de `cpu` para o Pod. Podem ser definidos outros limites, como por exemplo, `memory`.
+  - Em `resource` é definido que serão disponibilizados 10m de `cpu` para o Pod;
+  - Para disponibilizar um core de uma CPU, o valor informado deve ser `1000m`. Ou seja, o valor informado no arquivo de configuração acima de `10m` é equivalente a 1% de um core;
+  - Podem ser definidos outros limites, como por exemplo, `memory`. Se quisermos disponibilizar 1 Gigabyte, podemos digitar `1Gi` ou `1000Mi` (1000 Megabytes).
 
 - Em seguida é necessário configurar o HPA:
 

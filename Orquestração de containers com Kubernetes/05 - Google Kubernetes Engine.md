@@ -64,6 +64,7 @@
 - No modo Padrão, é necessário definir uma série de configurações do Cluster, como o número de Nodes (é possível limitar o número máximo de Pods por Node), o tipo das máquinas virtuais e a quantidade de recurso computacional que será alocado para elas. No modo Piloto Automático, o próprio serviço trata de alocar os recursos para a aplicação conforme necessidade.
 
 - No modo Padrão o custo é calculado por Node, enquanto no Automático é por Pod.
+  - Quando criamos um novo recurso em um AutoPilot, uma mensagem de *warning* aparece informando que os recursos computacionais do Cluster foram incrementados para atender as necessidades da aplicação criada.
 
 - No exemplo apresentado abaixo, foi criado um Cluster com três Nodes (valor padrão) e podemos visualizar em **Nós** que de fato são alocadas três máquinas virtuais:
 
@@ -72,6 +73,17 @@
   - Se acessarmos o serviço **Compute Engine**, onde são listadas todas as máquinas virtuais do projeto, é possível visualizá-las também. Porém, se o Cluster for criado no Piloto Automático, essas máquinas virtuais não ficam visíveis para o usuário.
 
 - O próprio Google Cloud Plataform fornece uma calculadora que possibilita o usuário simular os diferentes cenários de configuração do Cluster, e visualizar as estimativas de gasto que o mesmo teria.
+
+- Podemos criar o Cluster pela linha de comando:
+
+  ```Google Cloud
+    gcloud container clusters create-auto <nome-cluster> --region <regiao>
+  ```
+
+  - Nesse caso, o atributo `create` significa que o Cluster será criado no AutoPilot.
+  - Exemplo:
+
+    ![GKE - Criando Cluster pela linha de comando](Imagens/GKE%20-%20Criando%20Cluster%20pela%20Linha%20de%20Comando.png)
 
 ### :arrow_right: Criando Pods
 
@@ -123,7 +135,7 @@
 
 - Após inserir o comando obtido no terminal e executá-lo, será possível manipular o Cluster a partir do terminal utilizando os comandos do `kubectl` já conhecidos.
 
-#### :arrow_right: Alocação de Pods em Nodes
+### :arrow_right: Alocação de Pods em Nodes
 
 ![Scheduler](Imagens/Scheduler.png)
 
@@ -133,7 +145,7 @@
 
   ![Alocação de Pods em Nodes](Imagens/GKE%20-%20Aloca%C3%A7%C3%A3o%20de%20Pods%20nos%20Nodes.png)
 
-#### :arrow_right: Manipulando Deployments
+### :arrow_right: Manipulando Deployments
 
 - Na imagem abaixo podemos visualizar o comando `kubectl get nodes` sendo executado diretamente no terminal da máquina local e exibindo os três Nodes do Cluster criado na nuvem.
 
@@ -147,7 +159,7 @@
 
   ![GKE - Informações do Deployment](Imagens/GKE%20-%20Informa%C3%A7%C3%B5es%20do%20Deployment.png)
 
-#### :arrow_right: Criando Service
+### :arrow_right: Criando Service
 
 - No exemplo apresentado, o Pod foi criado sem expô-lo através de um serviço. É possível fazer isso através da interface do GKE:
 
@@ -165,7 +177,7 @@
 
   ![GKE - Services](Imagens/GKE%20-%20Services.png)
 
-#### :arrow_right: Visualizando Eventos
+### :arrow_right: Visualizando Eventos
 
 - Para visualizar eventos que ocorreram dentro de um Pod executamos o seguinte comando:
 
@@ -185,7 +197,7 @@
     kubectl get events
   ```
 
-#### :arrow_right: Visualizando Logs
+### :arrow_right: Visualizando Logs
 
 - Para visualizar os logs de um Pod, executamos o seguinte comando:
 
@@ -196,3 +208,11 @@
 - Porém, podemos visualizar essas mesmas informações acessando o Pod, via interface Gráfica do GKE, e indo na aba **Registros**:
 
   ![GKE - Pod Logs](Imagens/GKE%20-%20Pod%20Logs.png)
+
+## :three: Projeto Livro de Visitas
+
+![Diagrama Projeto Livro de Visitas](Imagens/GKE%20-%20Projeto%20Livro%20de%20Visitas.png)
+
+- [Clique aqui](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples) para acessar o GitHub da Google Cloud Platform e obter acesso a diversos projetos Kubernetes de exemplo. O projeto de livro de visitas encontra-se no diretório `guestbook`.
+
+- O projeto também encontra-se nesse repositório [aqui](./Arquivos/Projeto%20-%20Livro%20de%20Visitas/).
