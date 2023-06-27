@@ -54,7 +54,8 @@
 - Os recursos da Google Cloud Plataform são distribuídos entre regiões e zonas, permitindo a redundância das aplicações hospedadas no serviço. As regiões representam localizações geográficas, como por exemplo, Costa Oeste dos Estados Unidos e dentro dessas existem as zonas.
   - É importante saber que existem dois tipos de Cluster: regionais e zonais.
   - Os **Clusters Regionais** disponibilizam o plano de controle (ou nó Master) e os nós que contém nossas aplicações em diferentes zonas da mesma região, gerando uma redundância. Caso uma das zonas pare de funcionar, as demais suprirão a ausência até que a mesma seja reestabelecida, sendo transparente para o usuário.
-  - Os **Clusters Zonais** podem ser formados por uma ou mais zonas de uma mesma região. A diferença nesse caso é que o plano de controle estará disponível em apenas uma delas. Caso a mesma sofra algum problema, nossa aplicação ficará indisponível.
+  - Os **Clusters Zonais** podem ser formados por uma ou mais zonas de uma mesma região. A diferença nesse caso é que o plano de controle estará disponível em apenas uma delas. Caso a mesma sofra algum problema, nossa aplicação ficará indisponível;
+  - É recomendado o uso de Clusters Regionais para aplicações em ambiente produtivo.
 
 ### :arrow_right: Criando um Cluster
 
@@ -163,3 +164,35 @@
 - Na seção **Serviços e entradas** podemos visualizar todos os Services criados no nosso Cluster e em **Pontos de extremidade** o endpoint para acessarmos nossa aplicação:
 
   ![GKE - Services](Imagens/GKE%20-%20Services.png)
+
+#### :arrow_right: Visualizando Eventos
+
+- Para visualizar eventos que ocorreram dentro de um Pod executamos o seguinte comando:
+
+  ```Google Cloud
+    kubectl describe pod <nome-pod>
+  ```
+
+- Porém, podemos visualizar essas mesmas informações acessando o Pod, via interface Gráfica do GKE, e indo na aba **Eventos**:
+
+  ![GKE - Pod Events](Imagens/GKE%20-%20Pod%20Events.png)
+
+- O mesmo serve para outras funcionalidades, como Deployments e Services.
+
+- É possível visualizar todos os eventos do Cluster de uma só vez:
+
+  ```Google Cloud
+    kubectl get events
+  ```
+
+#### :arrow_right: Visualizando Logs
+
+- Para visualizar os logs de um Pod, executamos o seguinte comando:
+
+  ```Google Cloud
+    kubectl logs pod/<nome-pod>
+  ```
+
+- Porém, podemos visualizar essas mesmas informações acessando o Pod, via interface Gráfica do GKE, e indo na aba **Registros**:
+
+  ![GKE - Pod Logs](Imagens/GKE%20-%20Pod%20Logs.png)
