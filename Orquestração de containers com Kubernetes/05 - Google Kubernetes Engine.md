@@ -216,3 +216,194 @@
 - [Clique aqui](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples) para acessar o GitHub da Google Cloud Platform e obter acesso a diversos projetos Kubernetes de exemplo. O projeto de livro de visitas encontra-se no diretório `guestbook`.
 
 - O projeto também encontra-se nesse repositório [aqui](./Arquivos/Projeto%20-%20Livro%20de%20Visitas/).
+
+## :four: Estratégias de Deploy
+
+### :arrow_right: Rolling Update
+
+- A estratégia é realizar a alteração gradual do ambiente de produção. Na imagem abaixo o sistema possui três instancias, que encontram-se inicialmente em uma versão representada pela cor azul (*State 0*). Em um segundo momento (*State 1*), desejamos inserir a nova versão desse sistema, representada pela cor verde, sendo apenas uma das instâncias alterada e as demais mantidas na versão anterior. Em um segundo momento (*State 2*), mais uma instância é alterada e por fim (*State 3*) o último nó é atualizado.
+
+- A ideia dessa estratégia é não derrubar possíveis usuários que estejam conectados no sistema, ainda na versão antiga, para realizar o deploy da nova versão. O nó é atualizado apenas quando não houverem mais usuários conectados a ele, sendo a mudança transparente para o usuário.
+
+![Estratégias de Deploy - Rolling Update](Imagens/Estrat%C3%A9gias%20de%20Deploy%20-%20Rolling%20Update.png)
+
+- Essa estratégia, por padrão, é utilizada pelo Kubernetes quando realizamos o deploy de uma nova versão de um Pod:
+
+![Estratégias de Deploy - Rolling Update - Exemplo](Imagens/Estrat%C3%A9gias%20de%20Deploy%20-%20Rolling%20Update%20-%20Exemplo.png)
+
+- Na imagem acima podemos verificar que um Pod da versão antiga é removido apenas quando um novo da nova versão é criado.
+
+### :arrow_right: Blue/Green
+
+- A estratégia é manter duas versões do sistema em ambiente produtivo e realizar o chaveamento entre elas utilizando o balanceador de carga que recebe as requisições. Isso permite que caso sejam verificadas inconsistências na nova versão, rapidamente seja possível voltar para o estado anterior.
+
+![Estratégias de Deploy - Blue/Green](Imagens/Estrat%C3%A9gias%20de%20Deploy%20-%20Blue%20Green.png)
+
+- Essa estratégia pode ser exemplificada da seguinte forma:
+
+1. Ambiente produtivo corrente, que utiliza a versão 1 da imagem da aplicação, recebe o label `version: blue`:
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: webapp-deployment-blue
+      labels:
+        app: webapp
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: webapp
+          version: blue
+      template:
+        metadata:
+          labels:
+            app: webapp
+            version: blue
+        spec:
+          containers:
+          - name: webapp
+            image: gcr.io/gke-lab-390702/webapp:v1
+            ports:
+            - containerPort: 5000
+  ```
+
+2. A nova versão, que utiliza a versão 2 da imagem, recebe o label `version: green`:
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: webapp-deployment-green
+      labels:
+        app: webapp
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: webapp
+          version: green
+      template:
+        metadata:
+          labels:
+            app: webapp
+            version: green
+        spec:
+          containers:
+          - name: webapp
+            image: gcr.io/gke-lab-390702/webapp:v2
+            ports:
+            - containerPort: 5000
+  ```
+
+3. As duas versões convivem paralelamente no mesmo ambiente;
+
+  ![Estratégias de Deploy - Blue/Green - Exemplo](Imagens/Estrat%C3%A9gias%20de%20Deploy%20-%20Blue%20Green%20-%20Exemplo.png)
+
+4. Para determinar qual dos dois Deployments deverá ser acessado pelos usuários, será utilizado o Service, que disponibiliza a aplicação através do LoadBalancer da Cloud. Em `selector` é informado se é para olhar para o Deployment com `version` igual a `blue` ou `green`:
+
+  ```YAML
+    apiVersion: "v1"
+    kind: "Service"
+    metadata:
+      name: "webapp-lb"
+      namespace: "default"
+      labels:
+        app: "webapp"
+    spec:
+      ports:
+      - protocol: "TCP"
+        port: 80
+        targetPort: 5000
+      selector:
+        app: "webapp"
+        version: green
+      type: "LoadBalancer"
+      loadBalancerIP: ""
+  ```
+
+5. Caso seja necessário chavear para a versão anterior, basta mudar o valor de `version` no arquivo de configuração do Service e executá-lo novamente.
+
+6. Assim que a versão `green` for validada, a versão `blue` pode ser removida, caso contrário, consumirá recursos desnecessariamente.
+
+### :arrow_right: Canary
+
+- Nesse modelo de deploy, as duas versões da aplicação são mantidas ao mesmo tempo, assim como no modelo Blue/Green, porém, com a diferença de que nesse caso o balanceador de carga alimenta as duas versões ao mesmo tempo. É interessante deixar a versão atual do ambiente com mais instâncias, gerando um menor impacto durante o deploy caso sejam identificadas falhas na nova versão.
+
+![Estratégias de Deploy - Canary](Imagens/Estrat%C3%A9gias%20de%20Deploy%20-%20Canary.png)
+
+- Seja o caso onde possuimos uma aplicação em ambiente de produção funcionando com dez instâncias. Desejamos inserir uma nova versão da mesma e para realizar a validação, vamos substituir apenas uma dessas instâncias por uma nova e manter as demais na versão antiga:
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: webapp-deployment-prod
+      labels:
+        app: webapp
+    spec:
+      replicas: 9
+      selector:
+        matchLabels:
+          app: webapp
+      template:
+        metadata:
+          labels:
+            app: webapp
+        spec:
+          containers:
+          - name: webapp
+            image: gcr.io/gke-lab-390702/webapp:v1
+            ports:
+            - containerPort: 5000
+  ```
+
+  ```YAML
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: webapp-deployment-canary
+      labels:
+        app: webapp
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: webapp
+      template:
+        metadata:
+          labels:
+            app: webapp
+        spec:
+          containers:
+          - name: webapp
+            image: gcr.io/gke-lab-390702/webapp:v3
+            ports:
+            - containerPort: 5000
+  ```
+
+- O Service é configurado de tal forma que aponta para ambas as versões:
+
+  ```YAML
+    apiVersion: "v1"
+    kind: "Service"
+    metadata:
+      name: "webapp-lb"
+      namespace: "default"
+      labels:
+        app: "webapp"
+    spec:
+      ports:
+      - protocol: "TCP"
+        port: 80
+        targetPort: 5000
+      selector:
+        app: "webapp"
+      type: "LoadBalancer"
+      loadBalancerIP: ""
+  ```
+
+- Obviamente pelo fato da versão corrente possuir mais instâncias do que a nova, na maioria das vezes o usuário será redirecionado para ela, gerando um mínimo impacto no ambiente caso a nova versão apresente instabilidade.
+
+- Assim que a versão `canary` for validada, ela pode substituir a versão `prod`.
