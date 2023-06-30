@@ -591,6 +591,8 @@
       minikube addons enable metrics-server
     ```
 
+  - Em ambientes de Cloud esse servidor de métricas é habilitado automaticamente.
+
 - Utilizando o arquivo [stress.sh](./Arquivos/Projeto/stress.sh), um Shell Script que executa múltiplas requisições ao endpoint do Pod do projeto realizado ao longo do curso, podemos ver o funcionamento do HPA:
 
   ![HorizontalPodAutoscaler](Imagens/HorizontalPodAutoscaler.png)
@@ -598,4 +600,10 @@
   - No exemplo acima, o Pod inicia com 3 réplicas, conforme configurado no arquivo. Porém, logo o HPA identifica que não há necessidade de se manter 3 cópías, sendo que apenas 10% dos recursos de CPU estão sendo utilizados. Conforme o arquivo `stress.sh` fosse executa mais vezes em paralelo, o número de requisições foi crescendo, aumentando a carga de trabalho do Pod que foi triplicado novamente. Ao final das execuções do script, o número de réplicas voltou para 1, pois a carga de trabalho voltou a ficar baixíssima, não havendo necessidade de se manter tantas cópias do Pod.
   - Vale ressaltar que a versão do arquivo `stress.sh` realiza requisições para o Pod do projeto no endereço `localhost` pois, como já explicado, o Cluster virtualizado pelo Docker Desktop é configurado para o mesmo endereço da máquina host. No Linux, é necessário inserir o endereço IP vinculado ao Minikube.
 
-- É possível também escalar Pods verticalmente, utilizando o **VerticalPodAutoscaler**.
+- Outro exemplo de ferramenta para estressar sua aplicação é o `hey`, desenvolvida na linguagem Go e pode ser baixada executando o seguinte comando:
+
+  ```Bash
+    go install github.com/rakyll/hey@latest
+  ```
+
+- É possível também escalar verticalmente, utilizando o **VerticalPodAutoscaler**. Nesse caso será escalado o número de Nodes do Cluster.
