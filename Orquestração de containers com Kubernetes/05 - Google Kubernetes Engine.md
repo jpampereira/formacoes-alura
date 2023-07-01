@@ -209,13 +209,15 @@
 
   ![GKE - Pod Logs](Imagens/GKE%20-%20Pod%20Logs.png)
 
-### :arrow_right: Escalando o Cluster Verticalmente
+### :arrow_right: Escalando Automaticamente
 
 - Da mesma forma que é possível escalar uma aplicação horizontalmente, aumentando o número de Pods através do **HorizontalPodAutoscaler**, é possível escalá-la verticalmente, aumenta o número de Nodes do Cluster de acordo com a carga de trabalho.
 
 - Para habilitar o escalonamento vertical através do GKE, basta acessar o Cluster que deseja configurar, entrar na página de edição e habilitar o campo "Ativar escalonador automático de clusters". Em seguida aparecerá alguns campos que podem ser preenchidos de acordo com a necessidade do usuário, entre eles, o número mínimo e máximo de Nodes que podem ser escalados:
 
   ![Escalonamento Vertical do Cluster](Imagens/Escalonamento%20Vertical%20do%20Cluster.png)
+
+- No GKE, não é necessário instalar o servidor de métricas, pois ele já vem junto do cluster por padrão.
 
 ## :three: Projeto Livro de Visitas
 

@@ -584,14 +584,13 @@
   - Definir o número mínimo e máximo de réplicas respectivamente em `minReplicas` e `maxReplicas`;
   - Definir em `metrics` quais serão as métricas monitoradas para definir como o Pod deve ser escalado. Nesse exemplo, será monitorada a utilização (`Utilization`) da  `cpu`, e caso atinja uma média de utilização (`averageUtilization`) acima de 50% da quantidade de CPU disponibilizada pela CPU (Definido no arquivo do Pod como `10m`), o Pod será escalado.
 
-- No Windows, é necessário utilizar um servidor de métricas, responsável por coletá-las da máquina e disponibilizá-las para o HPA. Esse servidor de métricas pode ser obtido no GitHub e está disponível no arquivo [components.yaml](./Arquivos/Projeto/components.yaml).
+- É necessário utilizar um servidor de métricas, responsável por coletá-las da máquina e disponibilizá-las para o HPA.
+  - No Windows, esse servidor de métricas pode ser obtido no GitHub e está disponível no arquivo [components.yaml](./Arquivos/Projeto/components.yaml).
   - No Linux, basta habilitar o servidor de métricas do Minikube através do seguinte comando:
 
     ```Bash
       minikube addons enable metrics-server
     ```
-
-  - Em ambientes de Cloud esse servidor de métricas é habilitado automaticamente.
 
 - Utilizando o arquivo [stress.sh](./Arquivos/Projeto/stress.sh), um Shell Script que executa múltiplas requisições ao endpoint do Pod do projeto realizado ao longo do curso, podemos ver o funcionamento do HPA:
 
