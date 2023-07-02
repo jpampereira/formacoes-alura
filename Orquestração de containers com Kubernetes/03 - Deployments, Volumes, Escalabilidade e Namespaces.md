@@ -606,3 +606,75 @@
   ```
 
 - É possível também escalar verticalmente, utilizando o **VerticalPodAutoscaler**. Nesse caso será escalado o número de Nodes do Cluster.
+
+## :six: Namespaces
+
+- **Namespaces** provêm um mecânismo para isolar recursos (Pods, Deployments, Services, etc.) contidos dentro de um mesmo Cluster.
+
+- Podemos imaginá-lo como um Cluster virtual dentro do nosso Cluster real.
+
+- Recomenda-se utilizá-los em situações onde existem diversas pessoas trabalhando no mesmo Cluster em diferentes escopos ou projetos.
+
+- Namespaces devem ser utilizados para separar escopos de projetos e não é recomendado o seu uso em situações de diferentes versões de um mesmo software que devem permanecer ativos. Nesse caso deve-se utilizar os labels.
+
+- Inicialmente o Kubernetes possui quatro Namespaces:
+  - `default`: Caso um objeto seja criado sem especificar seu Namespace, o mesmo será criado no espaço padrão.
+  - `kube-node-lease`
+  - `kube-public`: Armazena recursos que podem ser acessados por qualquer usuário, sem necessidade de autenticação. Se executarmos o comando `kubectl cluster-info` visualizaremos informações sobre o Cluster configurado atualmente, como o endereço do Node Master e do DNS, e essas informações são armazenadas em um ConfigMap armazenado nesse Namespace;
+  - `kube-system`: Qualquer objeto criado pelo próprio Kubernetes será armazenado nesse espaço.
+
+- Para listar todos os Namespaces:
+
+  ```Kubernetes
+    kubectl get namespace
+  ```
+
+- Para criar um Namespace:
+
+  ```Kubernetes
+    kubectl create namespace <nome-namespace>
+  ```
+
+- Para informar em qual Namespace o comando deve refletir:
+
+  - Para listar os Pods de um determinado Namespace:
+
+    ```Kubernetes
+      kubectl get pods --namespace=<nome-namespace>
+    ```
+
+  - Para criar um recurso em um determinado Namespace:
+
+    ```Kubernetes
+      kubectl apply -f <caminho-arquivo-recurso> -n <nome-namespace>
+    ```
+
+  - Para listar os recursos de todos os Namespaces, devemos utilizar o parâmetro `-A`.
+
+- Podemos determinar o Namespace de preferência para não ter que ficar toda hora utilizando o parâmetro `--namespace` e evitar que nossos recursos sejam criados no Namespace `default` ou outro por engano:
+
+  ```Kubernetes
+    kubectl config set-context --current --namespace=<namespace>
+  ```
+
+  - Para validar:
+
+    ```Kubernetes
+      kubectl config view --minify | grep namespace:
+    ```
+
+- Em casos de ambientes produtivos, recomenda-se criar um Namespace para o projeto e não utilizar o `default`.
+
+- Quando um Service é criado, um registro no DNS do Cluster também é criado e ele possui o formato `<nome-service>-<nome-namespace>.svc.cluster.local`. Esse nome pode ser utilizado, ao invés do endereço IP, para não deixar uma aplicação amarrada a um endereço único e necessitar de alterações caso haja alguma mudança.
+
+- Para determinar o Namespace através de um arquivo de configuração, deve-se utilizar o campo `metadata`:
+
+  ```YAML
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: mysql-configmap
+      namespace: my-namespace
+    data:
+      db_url: mysql-service.database
+  ```
