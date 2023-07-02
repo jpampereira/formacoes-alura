@@ -52,6 +52,8 @@
 
 - A partir de então é possível executar os comandos já conhecidos do Kuberenetes, através dp `kubectl` e eles estarão refletindo o Cluster alocado na Digital Ocean e não mais o Cluster local.
 
+## :three: Comandos
+
 - Para listar os Clusters:
 
   ```PowerShell
@@ -64,7 +66,15 @@
     doctl kubernetes cluster node-pool list <nome-cluster>
   ```
 
-## :three: 1-Click Apps
+- Para deletar um Cluster:
+
+  ```PowerShell
+    doctl kubernetes cluster delete <nome-cluster>
+  ```
+
+- Podemos utilizar a flag `-h` ou `--help` para obter ajuda.
+
+## :four: 1-Click Apps
 
 - A Digital Ocean oferece aplicações prontas que podem ser instaladas com apenas um único clique. Para utilizá-las é necessário acessar o **Marketplace** através da barra de opções azul à esquerda:
 
@@ -91,7 +101,7 @@
 
 - No caso da aplicação em WordPress utilizada com exemplo, ela é instalada no namespace `wordpress`.
 
-## :four: Monitoração do Cluster
+## :five: Monitoração do Cluster
 
 - Na página do Cluster, podemos verificar métricas de usabilidade dos seus recursos (CPU, Memória, Disco, etc.), através da aba **Insights**:
 
@@ -112,3 +122,21 @@
   ```
 
 - Enquanto pela linha de comando é possível visualizar apenas os valores atuais, através da interface da Digital Ocean é possível visualizar o histórico de até os últimos 14 dias.
+
+## :six: Escalonamento Vertical
+
+- Quando falamos sobre escalonamento vertical, sempre estamos nos referindo a quantidade de recursos do Cluster, isto é, o número de Nodes do mesmo.
+
+- Para realizar o processo via interface gráfica da Digital Ocean, acessar a página do Cluster, clicamos nos três pontinhos do Pool em que desejamos alterar as configurações de escalabilidade e clicamos em **Resize or Autoscale**:
+
+  ![Escalonamento Vertical - Parte 1](Imagens/Digital%20Ocean%20-%20Escalonamento%20Vertical%20-%20Parte%201.png)
+
+- Podemos escolher a opção **Fixed size**, onde fixamos o número de Nodes do Cluster e este permanecerá até que outra alteração manual aconteça; ou a opção **Autoscale**, onde definimos o valor mínimos e máximos de Nodes do nosso Cluster e a plataforma tratará de alocar e desalocar os recursos conforme a necessidade:
+
+  ![Escalonamento Vertical - Parte 2](Imagens/Digital%20Ocean%20-%20Escalonamento%20Vertical%20-%20Parte%202.png)
+
+- Para realizar esse mesmo processo via linha de comando:
+
+  ```PowerShell
+    doctl kubernetes cluster node-pool update <nome-cluster> <nome-pool> --auto-scale --min-nodes <valor> --max-nodes <valor>
+  ```
