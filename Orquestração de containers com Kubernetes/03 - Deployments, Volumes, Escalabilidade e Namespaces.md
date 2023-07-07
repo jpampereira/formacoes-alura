@@ -279,7 +279,7 @@
       storageClassName: slow
   ```
 
-  - Para associar o PVC ao StorageClass, o valor de `storageClassName` deve ser o mesmo de `name` nos metadados do arquivo de configuração do StorageClass.;
+  - Para associar o PVC ao StorageClass, o valor de `storageClassName` deve ser o mesmo de `name` nos metadados do arquivo de configuração do StorageClass;
   - As configurações de `accessModes` e `storage` serão replicadas para o PersistentVolume.
 
 - Após criar esses recursos, automaticamente um disco e o PersistentVolume serão criados.
@@ -314,6 +314,8 @@
     provisioner: kubernetes.io/no-provisioner
     volumeBindingMode: WaitForFirstConsumer
   ```
+
+- O Kubernetes possui um StorageClass `default` que define as características do disco que deve ser criado caso o `StorageClasseName` não seja determinado.
 
 ### :arrow_right: StatefulSets
 
