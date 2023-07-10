@@ -651,7 +651,7 @@
       kubectl apply -f <caminho-arquivo-recurso> -n <nome-namespace>
     ```
 
-  - Para listar os recursos de todos os Namespaces, devemos utilizar o parâmetro `-A`.
+  - Para listar os recursos de todos os Namespaces, devemos utilizar o parâmetro `all-namespaces` ou `-A`.
 
 - Podemos determinar o Namespace de preferência para não ter que ficar toda hora utilizando o parâmetro `--namespace` e evitar que nossos recursos sejam criados no Namespace `default` ou outro por engano:
 
