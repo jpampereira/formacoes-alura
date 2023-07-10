@@ -339,7 +339,7 @@
 ![NodePort - Comandos](Imagens/NodePort%20-%20Comandos.png)
 
 - Quando executamos o comando `kubectl get svc`, é exibido o endereço IP de `svc-pod-1`, em `CLUSTER-IP`, como `10.104.44.245`. Porém, devemos tomar cuidado, pois esse IP funcionará apenas dentro do Cluster, isto é, para outro Pod no mesmo Cluster acessar o `pod-1`, deve utilizá-lo. Para realizar o acesso de fora do Cluster, deve-se utilizar o endereço IP do Node, que pode ser obtido no comando `kubectl get node`, no campo `INTERNAL-IP`.
-  - No Windows, o endereço do Node será sempre o `localhost`. No caso do Linux, deve-se verificar, pois o Minikube atribui o IP randomicamente;
+  - No Windows, o endereço do Node será sempre o `localhost`. No caso do Linux, deve-se verificar utilizando o comando `minikube ip`, pois o Minikube atribui o IP randomicamente;
   - As portas utilizadas de fora do Cluster e dentro também são diferentes. No comando `kubectl get svc` podemos ver que no campo `PORT(S)` é apresentado o valor `80:30000`. O valor à esquerda deve-se ser utilizado para acessar o Serviço internamento no Cluster, a porta à direita deve ser utilizada para acessá-lo externamente;
   - Caso não especificada no arquivo, o valor da porta externa será atribuído de forma randômica entre 30000 e 32767. Para especificar a porta, utiliza-se o atributo `nodePort` no arquivo do Service.
 
