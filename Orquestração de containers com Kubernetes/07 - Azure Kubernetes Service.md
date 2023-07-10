@@ -168,6 +168,12 @@
   
   - O parâmetro `--output` traz a resposta do comando no formato de tabela. Por padrão o comando traz a resposta no formato JSON.
 
+- Para remover um grupo de recursos:
+
+  ```PowerShell
+    az group delete --name <nome-grupo>
+  ```
+
 ### :arrow_right: Cluster
 
 - Para criar o Cluster:
@@ -202,6 +208,12 @@
     az aks upgrade --name <nome-cluster> --resource-group <nome-grupo> --kubernetes-version <versao-k8s>
   ```
 
+- Para remover um Cluster:
+
+  ```PowerShell
+    az aks delete --name <nome-cluster> --resource-group <nome-grupo>
+  ```
+
 ### :arrow_right: Container Registry
 
 - Para criar um Container Registry:
@@ -229,3 +241,13 @@
   ```
 
   - Se trocarmos `show` por `renew`, ele irá atualizar as senhas.
+
+- Para remover um Container Registry:
+
+  ```PowerShell
+    az acr delete --name <nome-cr>
+  ```
+
+## :seven: Custos
+
+- Podemos utilizar a [calculadora](https://azure.microsoft.com/pt-br/pricing/calculator/) do Azure para gerar uma estimativa de gastos de recursos como AKS, ACR, discos, além de outros serviços fornecidos pelo provedor, antes mesmos de criá-los.
